@@ -1,0 +1,7 @@
+log/
+model_data/
+images/
+training/
+yolov3/__pycache__/
+data/
+.DS_Store
