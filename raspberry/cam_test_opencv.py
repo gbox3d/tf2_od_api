@@ -1,4 +1,4 @@
-#python3 faceCam_dnn.py --prototxt deploy.prototxt --model res10_300x300_ssd_iter_140000.caffemodel
+#camera draw frame sample with opencv
 import cv2 as cv
 import sys 
 import time

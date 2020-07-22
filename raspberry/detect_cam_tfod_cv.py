@@ -1,4 +1,5 @@
-#%% python3 faceCam_dnn.py --prototxt deploy.prototxt --model res10_300x300_ssd_iter_140000.caffemodel
+#%% 
+#opencv 버전 카메라 제어 예제
 import numpy as np
 import os
 import six.moves.urllib as urllib
@@ -51,10 +52,10 @@ ap = argparse.ArgumentParser()
 
 # cam ver1 size : 2592,1944
 ap.add_argument("-v", "--videodevice", type=int,default=0, help="video device id default(0)")
-ap.add_argument("--videoWidth", type=int,default=192*4, help="video width")
-ap.add_argument("--videoHeight", type=int,default=108*4, help="video height")
-# ap.add_argument("--videoWidth", type=int,default=320, help="video width")
-# ap.add_argument("--videoHeight", type=int,default=240, help="video height")
+# ap.add_argument("--videoWidth", type=int,default=192*4, help="video width")
+# ap.add_argument("--videoHeight", type=int,default=108*4, help="video height")
+ap.add_argument("--videoWidth", type=int,default=640, help="video width")
+ap.add_argument("--videoHeight", type=int,default=480, help="video height")
 
 args = vars(ap.parse_args())
 
