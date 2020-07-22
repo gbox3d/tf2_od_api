@@ -1,6 +1,7 @@
-# %%
-# ### 텐서플로우 Object Detection API
+# %% 
+# ### 텐서플로우 Object Detection API 
 # https://github.com/tensorflow/models/tree/master/research/object_detection  
+# this sample best for vscode (이 예제는 vscode에 좋도록 제작하였습니다.)
 
 import numpy as np
 import os
@@ -30,24 +31,23 @@ print('util modeules load ok')
 
 # %%
 # tf1 형식의 savemodel 읽기 
-# model_name = 'ssd_mobilenet_v1_coco_2017_11_17'
+#wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v2_coco_2018_03_29.tar.gz
 model_name = 'ssd_mobilenet_v2_coco_2018_03_29'
-# model_name = 'ssd_resnet50_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03'
-# model_name = 'ssd_mobilenet_v2_fpnlite_640x640_coco17_tpu-8'
-# model_name = 'centernet_resnet50_v1_fpn_512x512_coco17_tpu-8'
 model_dir = f"./data/{model_name}/saved_model"
-model = tf.saved_model.load(str(model_dir))
-model = model.signatures['serving_default']
-print(f'{model_name} load ok')
-# print(model.inputs)
 
+# model = tf.saved_model.load(str(model_dir))
+# model = model.signatures['serving_default']
+
+detect_fn = tf.saved_model.load(str(model_dir)).signatures['serving_default']
+
+print(f'{model_name} load ok')
+
+#라벨멥 읽기
 category_index = label_map_util.create_category_index_from_labelmap('./data/mscoco_label_map.pbtxt', use_display_name=True)
-# print(category_index)
 print('label load ok')
 
 # %%
 #image load
-#image_path = '../res/chinagirl.jpg'
 image_path = 'test_img/image2.jpg'
 print('load image')
 image_np = np.array(Image.open(image_path))
@@ -58,13 +58,13 @@ print(f'{image_path} load ok')
 # make image to input tensor
 # The input needs to be a tensor, convert it using `tf.convert_to_tensor`.
 input_tensor = tf.convert_to_tensor(image_np)
-  # The model expects a batch of images, so add an axis with `tf.newaxis`.
+# The model expects a batch of images, so add an axis with `tf.newaxis`.
 input_tensor = input_tensor[tf.newaxis,...]
 
 # Run inference
 print('start inference')
 start_tick = time.time()
-output_dict = model(input_tensor)
+output_dict = detect_fn(input_tensor)
 
 # print(output_dict)
 
@@ -97,9 +97,6 @@ vis_util.visualize_boxes_and_labels_on_image_array(
 display(Image.fromarray(_img_temp))
 
 print(f'draw delay { time.time() - start_tick}')
-
-
-
 
 # %%
 output_dict['detection_scores']
