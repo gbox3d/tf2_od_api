@@ -5,3 +5,4 @@ training/
 yolov3/__pycache__/
 data/
 .DS_Store
+__pycache__/
