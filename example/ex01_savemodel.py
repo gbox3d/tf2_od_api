@@ -29,7 +29,13 @@ sys.path.append('../libs')
 from utils_ai import pil_draw_lib as pdl
 
 
-print(f'load tf ok {tf.__version__}')
+# print(f'load tf ok {tf.__version__}')
+
+
+print("버전: ", tf.__version__)
+print("즉시 실행 모드: ", tf.executing_eagerly())
+print("GPU ", "사용 가능" if tf.config.experimental.list_physical_devices("GPU") else "사용 불가능")
+
 
 # %%
 # load trained model
@@ -86,3 +92,5 @@ ymin, xmin, ymax, xmax = _detections[0][_index_object] #감지 박스 구하기
 pdl.draw_bounding_box_on_image(img_with_dection,ymin, xmin, ymax, xmax)
 display(img_with_dection)
 
+
+# %%
