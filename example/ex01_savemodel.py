@@ -1,3 +1,4 @@
+# savemodel 예제 
 # %%
 #load saved model and infulence example
 
@@ -23,14 +24,19 @@ from IPython.display import display
 
 # import utils.visual_util
 
+import sys
+sys.path.append('../libs')
+from utils_ai import pil_draw_lib as pdl
 
 
 print(f'load tf ok {tf.__version__}')
 
 # %%
 # load trained model
-print('loading trained image')
-model_name = 'centernet_resnet50_v1_fpn_512x512_coco17_tpu-8'
+print('loading trained model')
+
+model_name = 'ssd_mobilenet_v2_320x320_coco17_tpu-8'
+
 model_dir = f"../data/{model_name}/saved_model"
 start_time = time.time()
 tf.keras.backend.clear_session()
@@ -55,7 +61,7 @@ plt.imshow(image_np)
 # do inference
 input_tensor = np.expand_dims(image_np, 0)
 detections = detect_fn(input_tensor)
-print(detections)
+# print(detections)
 print('inference complete')
 
 # %%
@@ -66,20 +72,17 @@ scores = detections['detection_scores'][0].numpy()
 # 추정치가 50% 이상만 추출
 _detections = [v for v in zip(scores, classes, boxes) if v[0] > 0.5]
 
+print(_detections)
+
 
 # %%
 # 감지 영역 그리기 
-import sys
-sys.path.append('../../')
-from utils_ai import pil_draw_lib as pdl
-
 img_with_dection = Image.fromarray(image_np.copy()) #원본복사하여 pil로 변환
-
-ymin, xmin, ymax, xmax = _detections[0][2] #감지 박스 구하기 
+_index_object = 2
+_score = _detections[0][_index_object]
+_class = _detections[0][_index_object]
+ymin, xmin, ymax, xmax = _detections[0][_index_object] #감지 박스 구하기 
 
 pdl.draw_bounding_box_on_image(img_with_dection,ymin, xmin, ymax, xmax)
 display(img_with_dection)
 
-
-
-# %%
