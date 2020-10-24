@@ -1,6 +1,7 @@
 # checkpoint 방식 예제
 #%%
 import os
+import time
 import pathlib
 
 import matplotlib
@@ -85,10 +86,38 @@ print(f'{image_path} load ok')
 display(Image.fromarray(image_np))
 
 #%%
+start_time = time.time()
+
 input_tensor = tf.convert_to_tensor(
     np.expand_dims(image_np, 0), dtype=tf.float32)
 detections, predictions_dict, shapes = detect_fn(input_tensor)
 
-print(detections['detection_boxes'][0].numpy())
+end_time = time.time()
+elapsed_time = end_time - start_time
+print(f'inference  Elapsed time: {elapsed_time}s ')
+
+# print(detections['detection_boxes'][0].numpy())
 # print(predictions_dict)
+# %%
+# 결과물 정리하기
+boxes = detections['detection_boxes'][0].numpy()
+classes = detections['detection_classes'][0].numpy().astype(np.int32)
+scores = detections['detection_scores'][0].numpy()
+
+# 추정치가 50% 이상만 추출
+_detections = [v for v in zip(scores, classes, boxes) if v[0] > 0.5]
+
+print(_detections)
+#%%
+#결괴물 출력 
+img_with_dection = Image.fromarray(image_np.copy()) #원본복사하여 pil로 변환
+
+for _d in _detections :
+  print(_d)
+  _score = _d[0]
+  _class = _d[1]
+  ymin, xmin, ymax, xmax = _d[2] #감지 박스 구하기 
+  pdl.draw_bounding_box_on_image(img_with_dection,ymin, xmin, ymax, xmax)
+
+display(img_with_dection)
 # %%

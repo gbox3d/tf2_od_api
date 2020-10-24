@@ -57,10 +57,12 @@ image_path = '../test_img/image2.jpg'
 print('load image')
 # numpy형으로 변환
 image_np = np.array(Image.open(image_path))
-print(image_np.shape)
-print(type(image_np))
-print(f'{image_path} load ok')
-plt.imshow(image_np)
+
+display(Image.fromarray(image_np))
+# print(image_np.shape)
+# print(type(image_np))
+# print(f'{image_path} load ok')
+# plt.imshow(image_np)
 
 
 # %%
@@ -80,17 +82,30 @@ _detections = [v for v in zip(scores, classes, boxes) if v[0] > 0.5]
 
 print(_detections)
 
-
-# %%
-# 감지 영역 그리기 
+#%%
+#결괴물 출력 
 img_with_dection = Image.fromarray(image_np.copy()) #원본복사하여 pil로 변환
-_index_object = 2
-_score = _detections[0][_index_object]
-_class = _detections[0][_index_object]
-ymin, xmin, ymax, xmax = _detections[0][_index_object] #감지 박스 구하기 
 
-pdl.draw_bounding_box_on_image(img_with_dection,ymin, xmin, ymax, xmax)
+for _d in _detections :
+  print(_d)
+  _score = _d[0]
+  _class = _d[1]
+  ymin, xmin, ymax, xmax = _d[2] #감지 박스 구하기 
+  pdl.draw_bounding_box_on_image(img_with_dection,ymin, xmin, ymax, xmax)
+
 display(img_with_dection)
+
+
+# # %%
+# # 감지 영역 그리기 
+# img_with_dection = Image.fromarray(image_np.copy()) #원본복사하여 pil로 변환
+# _index_object = 2
+# _score = _detections[0][_index_object]
+# _class = _detections[1][_index_object]
+# ymin, xmin, ymax, xmax = _detections[2][_index_object] #감지 박스 구하기 
+
+# pdl.draw_bounding_box_on_image(img_with_dection,ymin, xmin, ymax, xmax)
+# display(img_with_dection)
 
 
 # %%
