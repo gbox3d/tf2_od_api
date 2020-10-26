@@ -1,16 +1,17 @@
 #%%
 import os
-import cv2
 import numpy as np
 import sys
 import glob
 import importlib.util
-
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 from PIL import Image
 from IPython.display import display
 
 from time import time
+
+sys.path.append('../libs')
+from utils_ai import pil_draw_lib as pdl
 
 from tflite_runtime.interpreter import Interpreter
 # from tensorflow.lite import Interpreter
@@ -19,104 +20,76 @@ from tflite_runtime.interpreter import Interpreter
 print('load tflite ok')
 
 
-
-
 # %%
+# init interpreter
+PATH_TO_CKPT = '../data/Sample_TFLite_model/model.tflite'
 
-PATH_TO_CKPT = '../data/Sample_TFLite_model/detect.tflite'
-
-# Path to label map file
-PATH_TO_LABELS = '../data/Sample_TFLite_model/labelmap.txt'
-
-# Load the label map
-with open(PATH_TO_LABELS, 'r') as f:
-    labels = [line.strip() for line in f.readlines()]
-
-# Have to do a weird fix for label map if using the COCO "starter model" from
-# https://www.tensorflow.org/lite/models/object_detection/overview
-# First label is '???', which has to be removed.
-if labels[0] == '???':
-    del(labels[0])
-print('setup path name and label map ok')
-
-#%%
 # Load the Tensorflow Lite model.
 interpreter = Interpreter(model_path=PATH_TO_CKPT)
 interpreter.allocate_tensors()
-# Get model details
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
-height = input_details[0]['shape'][1]
-width = input_details[0]['shape'][2]
-
-floating_model = (input_details[0]['dtype'] == np.float32)
-
-input_mean = 127.5
-input_std = 127.5
-
-print(f'{width},{height}')
-
+ 
+_,width,height,_ = interpreter.get_input_details()[0]['shape']
+#  print(interpreter.get_input_details()[0]['shape'])
+print(f'{width} / {height} interpreter init ok')
 
 
 # %%
+# setup util
+def set_input_tensor(interpreter, image):
+  """Sets the input tensor."""
+  tensor_index = interpreter.get_input_details()[0]['index']
+  input_tensor = interpreter.tensor(tensor_index)()[0]
+  input_tensor[:, :] = image
 
-min_conf_threshold = 0.5
+
+def get_output_tensor(interpreter, index):
+  """Returns the output tensor at the given index."""
+  output_details = interpreter.get_output_details()[index]
+  tensor = np.squeeze(interpreter.get_tensor(output_details['index']))
+  return tensor
+
+
+
+def detect_objects(interpreter, image, threshold):
+  """Returns a list of detection results, each a dictionary of object info."""
+  set_input_tensor(interpreter, image)
+  interpreter.invoke()
+
+  # Get all output details
+  boxes = get_output_tensor(interpreter, 0)
+  classes = get_output_tensor(interpreter, 1)
+  scores = get_output_tensor(interpreter, 2)
+  count = int(get_output_tensor(interpreter, 3))
+
+  results = []
+  for i in range(count):
+    if scores[i] >= threshold:
+      result = {
+          'bounding_box': boxes[i],
+          'class_id': classes[i],
+          'score': scores[i]
+      }
+      results.append(result)
+  return results
+
+print('init util ok')
+
+# %%
+# invoke
 image_path = '../test_img/image2.jpg'
-# Load image and resize to expected shape [1xHxWx3]
-image = cv2.imread(image_path)
-image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-imH, imW, _ = image.shape 
-image_resized = cv2.resize(image_rgb, (width, height))
-input_data = np.expand_dims(image_resized, axis=0)
+image = Image.open(image_path).convert('RGB').resize(
+            (width, height), Image.ANTIALIAS) # 모델에 맞게 이미지 싸이즈 조정 
+_detections = detect_objects(interpreter, image, 0.5)
+print(_detections)
+# %%
+img_with_dection = image.copy()
+# print(results[0])
 
-_startTick = time()
+for _d in _detections :
+  ymin, xmin, ymax, xmax = _d['bounding_box'] # 바운딩박스 구하기 
+  pdl.draw_bounding_box_on_image(img_with_dection,ymin, xmin, ymax, xmax,thickness=1)
 
-# Normalize pixel values if using a floating model (i.e. if model is non-quantized)
-if floating_model:
-    input_data = (np.float32(input_data) - input_mean) / input_std
-
-# Perform the actual detection by running the model with the image as input
-interpreter.set_tensor(input_details[0]['index'],input_data)
-interpreter.invoke()
-
-# Retrieve detection results
-boxes = interpreter.get_tensor(output_details[0]['index'])[0] # Bounding box coordinates of detected objects
-classes = interpreter.get_tensor(output_details[1]['index'])[0] # Class index of detected objects
-scores = interpreter.get_tensor(output_details[2]['index'])[0] # Confidence of detected objects
-#num = interpreter.get_tensor(output_details[3]['index'])[0]  # Total number of detected objects (inaccurate and not needed)
-
-# print(scores)
-# print(classes.astype('int'))
-
-
-_result = [ _v for _v in zip(classes.astype('int'),scores) if (_v[1] > 0.5 and _v[0] == 0)  ]
-
-print(_result)
-
-print(f'invoke time :  { time() - _startTick }')
-
-# Loop over all detections and draw detection box if confidence is above minimum threshold
-for i in range(len(scores)):
-    if ((scores[i] >= min_conf_threshold) and (scores[i] <= 1.0)):
-
-        # Get bounding box coordinates and draw box
-        # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
-        ymin = int(max(1,(boxes[i][0] * imH)))
-        xmin = int(max(1,(boxes[i][1] * imW)))
-        ymax = int(min(imH,(boxes[i][2] * imH)))
-        xmax = int(min(imW,(boxes[i][3] * imW)))
-        
-        cv2.rectangle(image, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
-
-        # Draw label
-        object_name = labels[int(classes[i])] # Look up object name from "labels" array using class index
-        label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'person: 72%'
-        labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
-        label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
-        cv2.rectangle(image, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
-        cv2.putText(image, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
-_image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
-display(Image.fromarray(_image))
+display(img_with_dection)
 
 
 # %%
