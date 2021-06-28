@@ -1,46 +1,52 @@
 # checkpoint 방식 예제
 #%%
 import os
+import numpy as np
+import yaml
 import time
-import pathlib
+
+from six import BytesIO
 
 import matplotlib
 import matplotlib.pyplot as plt
-
-import io
-import scipy.misc
-import numpy as np
-from six import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 
-import sys
-sys.path.append('../libs')
-from utils_ai import pil_draw_lib as pdl
-
-
 import tensorflow as tf
-
+# from object_detection.utils import visualization_utils as viz_utils
+# from object_detection.utils import label_map_util
 
 from IPython.display import display
 
 
-from object_detection.utils import label_map_util
+# ckpt 방식에서는 필요함 
 from object_detection.utils import config_util
-from object_detection.utils import visualization_utils as viz_utils
 from object_detection.builders import model_builder
 
+import sys
+sys.path.append('../libs')
+from utils_ai import pil_draw_lib as pdl
+# from utils_ai import boxingImage
 
 print("버전: ", tf.__version__)
 print("즉시 실행 모드: ", tf.executing_eagerly())
 print("GPU ", "사용 가능" if tf.config.list_physical_devices("GPU") else "사용 불가능")
 
 
-print('load module ok')
+#%% load config
+with open('./config.yaml') as f :
+    _config = yaml.load(f, Loader=yaml.FullLoader)
+    print(_config)
+# config = _config
+model_path = _config['model_path']
+image_path = _config['image_path']
 
 #%%
-pipeline_config = '../data/ssd_mobilenet_v2_320x320_coco17_tpu-8/pipeline.config'
-model_dir = '../data/ssd_mobilenet_v2_320x320_coco17_tpu-8/checkpoint/'
+pipeline_config = f'{model_path}/pipeline.config'
+model_dir = f'{model_path}/checkpoint/'
 
+#%%
+
+# ckpt를 읽는 경우는 pipeline_config도 필요하다.
 # Load pipeline config and build a detection model
 configs = config_util.get_configs_from_pipeline_file(pipeline_config)
 model_config = configs['model']
@@ -72,18 +78,10 @@ detect_fn = get_model_detection_function(detection_model)
 print("load model ok")
 
 
-#%%
-# load image
-image_path = '../test_img/image2.jpg'
-print('load image')
-# numpy형으로 변환
+#%%# load image
 image_np = np.array(Image.open(image_path))
-
-# print(image_np.shape)
-# print(type(image_np))
-print(f'{image_path} load ok')
-# plt.imshow(image_np)
 display(Image.fromarray(image_np))
+image_np = pdl.boxingImage(image_np)
 
 #%%
 start_time = time.time()
@@ -117,7 +115,9 @@ for _d in _detections :
   _score = _d[0]
   _class = _d[1]
   ymin, xmin, ymax, xmax = _d[2] #감지 박스 구하기 
-  pdl.draw_bounding_box_on_image(img_with_dection,ymin, xmin, ymax, xmax)
+  pdl.draw_bounding_box_on_image(img_with_dection,ymin, xmin, ymax, xmax,
+  color='red'
+  )
 
 display(img_with_dection)
 # %%

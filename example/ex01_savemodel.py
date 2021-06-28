@@ -2,12 +2,8 @@
 # %%
 #load saved model and infulence example
 
-# import module start
-import io
-import os
-import scipy.misc
 import numpy as np
-import six
+import yaml
 import time
 
 from six import BytesIO
@@ -27,23 +23,38 @@ from IPython.display import display
 import sys
 sys.path.append('../libs')
 from utils_ai import pil_draw_lib as pdl
-
-
-# print(f'load tf ok {tf.__version__}')
-
+# from utils_ai import boxingImage
 
 print("버전: ", tf.__version__)
 print("즉시 실행 모드: ", tf.executing_eagerly())
 print("GPU ", "사용 가능" if tf.config.list_physical_devices("GPU") else "사용 불가능")
 
 
+#%% load config
+with open('./config.yaml') as f :
+    _config = yaml.load(f, Loader=yaml.FullLoader)
+    print(_config)
+# config = _config
+model_path = _config['model_path']
+image_path = _config['image_path']
+
+# %%
+# load image
+print('load image')
+# numpy형으로 변환
+image_np = np.array(Image.open(image_path))
+
+
+image_np = pdl.boxingImage(image_np)
+display(Image.fromarray(image_np))
+
+#%%
+pipeline_config = f'{model_path}/pipeline.config'
+model_dir = f'{model_path}/saved_model/'
 # %%
 # load trained model
 print('loading trained model')
 
-model_name = 'ssd_mobilenet_v2_320x320_coco17_tpu-8'
-
-model_dir = f"../data/{model_name}/saved_model"
 start_time = time.time()
 tf.keras.backend.clear_session()
 detect_fn = tf.saved_model.load(str(model_dir))
@@ -52,25 +63,13 @@ elapsed_time = end_time - start_time
 print(f'load complete {model_dir} Elapsed time: {elapsed_time}s ')
 
 # %%
-# load image
-image_path = '../test_img/image2.jpg'
-print('load image')
-# numpy형으로 변환
-image_np = np.array(Image.open(image_path))
-
-display(Image.fromarray(image_np))
-# print(image_np.shape)
-# print(type(image_np))
-# print(f'{image_path} load ok')
-# plt.imshow(image_np)
-
-
-# %%
 # do inference
+start_time = time.time()
 input_tensor = np.expand_dims(image_np, 0)
 detections = detect_fn(input_tensor)
-# print(detections)
-print('inference complete')
+end_time = time.time()
+elapsed_time = end_time - start_time
+print(f'inference complete Elapsed time: {elapsed_time}s')
 
 # %%
 boxes = detections['detection_boxes'][0].numpy()
@@ -85,27 +84,16 @@ print(_detections)
 #%%
 #결괴물 출력 
 img_with_dection = Image.fromarray(image_np.copy()) #원본복사하여 pil로 변환
-
+_table = ['blue','white','green','red']
 for _d in _detections :
   print(_d)
   _score = _d[0]
   _class = _d[1]
   ymin, xmin, ymax, xmax = _d[2] #감지 박스 구하기 
-  pdl.draw_bounding_box_on_image(img_with_dection,ymin, xmin, ymax, xmax)
+  pdl.draw_bounding_box_on_image(img_with_dection,ymin, xmin, ymax, xmax,
+  color=_table[_class-1]
+  )
 
 display(img_with_dection)
-
-
-# # %%
-# # 감지 영역 그리기 
-# img_with_dection = Image.fromarray(image_np.copy()) #원본복사하여 pil로 변환
-# _index_object = 2
-# _score = _detections[0][_index_object]
-# _class = _detections[1][_index_object]
-# ymin, xmin, ymax, xmax = _detections[2][_index_object] #감지 박스 구하기 
-
-# pdl.draw_bounding_box_on_image(img_with_dection,ymin, xmin, ymax, xmax)
-# display(img_with_dection)
-
 
 # %%
