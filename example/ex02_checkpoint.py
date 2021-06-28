@@ -109,14 +109,14 @@ print(_detections)
 #%%
 #결괴물 출력 
 img_with_dection = Image.fromarray(image_np.copy()) #원본복사하여 pil로 변환
-
+_table = ['blue','white','green','red']
 for _d in _detections :
   print(_d)
   _score = _d[0]
   _class = _d[1]
   ymin, xmin, ymax, xmax = _d[2] #감지 박스 구하기 
   pdl.draw_bounding_box_on_image(img_with_dection,ymin, xmin, ymax, xmax,
-  color='red'
+  color=_table[_class]
   )
 
 display(img_with_dection)
