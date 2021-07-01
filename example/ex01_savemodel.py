@@ -37,20 +37,15 @@ with open('./config.yaml') as f :
 # config = _config
 model_path = _config['model_path']
 image_path = _config['image_path']
+imgsz = _config['imgsz']
 
-# %%
-# load image
-print('load image')
-# numpy형으로 변환
-image_np = np.array(Image.open(image_path))
-
-
-image_np = pdl.boxingImage(image_np)
-display(Image.fromarray(image_np))
 
 #%%
-pipeline_config = f'{model_path}/pipeline.config'
+# pipeline_config = f'{model_path}/pipeline.config'
 model_dir = f'{model_path}/saved_model/'
+
+#%%
+
 # %%
 # load trained model
 print('loading trained model')
@@ -61,6 +56,17 @@ detect_fn = tf.saved_model.load(str(model_dir))
 end_time = time.time()
 elapsed_time = end_time - start_time
 print(f'load complete {model_dir} Elapsed time: {elapsed_time}s ')
+
+
+# %%
+# load image
+print('load image')
+# numpy형으로 변환
+image_np = np.array(Image.open(image_path))
+
+
+image_np = pdl.boxingImage(image_np,new_shape=imgsz)
+display(Image.fromarray(image_np))
 
 # %%
 # do inference
