@@ -1,0 +1,3 @@
+model_path : /home/gbox3d/work/dataset/handsign/workspace/models/my_ssd_model
+image_path : ../example/test.jpg
+imgsz : 320

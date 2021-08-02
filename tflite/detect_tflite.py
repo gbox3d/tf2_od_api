@@ -33,7 +33,9 @@ image_path = _config['image_path']
 # %%
 # init interpreter
 #/home/gbox3d/work/dataset/handsign/workspace/models/my_ssd_model/tfliteexport/saved_model/detect.tflite
-PATH_TO_CKPT = f'{model_path}/tfliteexport/saved_model/detect.tflite'
+# PATH_TO_CKPT = f'{model_path}/tfliteexport/saved_model/detect.tflite'
+# PATH_TO_CKPT = f'{model_path}/tfliteexport/saved_model/detect.tflite'
+PATH_TO_CKPT = f'/home/gbox3d/work/dataset/handsign/workspace/models/my_ssd_model640/tfliteexport/handsign.tflite'
 
 # Load the Tensorflow Lite model.
 interpreter = Interpreter(model_path=PATH_TO_CKPT)
@@ -42,10 +44,11 @@ interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 
- 
+_input_type = input_details[0]['index'] 
 _,width,height,_ = input_details[0]['shape']
 #  print(interpreter.get_input_details()[0]['shape'])
-print(f'{width} / {height} interpreter init ok')
+print(f'{width} / {height} , {_input_type} interpreter init ok')
+
 
 
 # %% 전처리 
